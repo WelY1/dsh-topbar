@@ -108,7 +108,7 @@ completedNotifications = new Set();
 | 网页地址 / 应用地址 | http(s) URL | 空 | `打开网页` = 点击打开此地址；`跳转到对应会话` 时此字段作为应用基址，点击打开 `<基址>?open=<会话ID>`，页面加载后自动选会话 |
 | 提醒保持 | -1 / 0~7200 秒 | 90 | `0` = 回答后立即跟随真实状态；`-1` = 常驻（见上表） |
 | 自动安装 GNOME 扩展 | 开关 | 开 | DSH 启动时把扩展文件幂等同步到 `~/.local/share/gnome-shell/extensions/`（无需 sudo） |
-| 自动重载 Shell | 开关 | 关 | 扩展文件变化时自动 `Meta.restart` 重载 Shell（仅 X11；Wayland 拒绝） |
+| 自动重载 Shell | 开关 | **开** | 扩展文件变化时自动 `global.reexec_self()` 重载 Shell（仅 X11；Wayland 拒绝）——与 Alt+F2→r 等效，桌面短暂闪烁、窗口保持 |
 
 改设置**不需要**重载 Shell/浏览器/重启 DSH；只有改这三个源文件才需要（见下）。
 
