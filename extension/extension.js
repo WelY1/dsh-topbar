@@ -134,6 +134,7 @@ function _chipClick(url) {
         argv = [_cfg.browser !== '' ? _cfg.browser : 'xdg-open', url];
         break;
     }
+    log('[dsh-topbar] click: browser="' + _cfg.browser + '" argv=' + argv.join(' '));
     imports.misc.util.spawn(argv);
   } catch (e) {
     log('[dsh-topbar] open url failed: ' + e);
