@@ -41,8 +41,9 @@ const DEFAULT_CFG = {
   maxLabelPx: 140,
   maxChips: 8,
   minimal: false,
-  clickAction: 'none',  // 'none' | 'openUrl'
-  openUrl: ''
+  clickAction: 'none',  // 'none' | 'openUrl' | 'openSession'
+  openUrl: '',
+  browser: ''           // '' = xdg-open; firefox/microsoft-edge/google-chrome-stable/chromium/自定义 token
 };
 
 // No push for this long => assume the DSH process is gone and clear chips.
@@ -71,6 +72,11 @@ function _normalizeCfg(raw) {
   cfg.clickAction = raw.clickAction === 'openUrl' || raw.clickAction === 'openSession' ? raw.clickAction : 'none';
   const url = String(raw.openUrl === undefined || raw.openUrl === null ? '' : raw.openUrl);
   cfg.openUrl = /^https?:\/\//.test(url) ? url : '';
+  // 同 host 侧白名单/单 token 规则,双保险。
+  const br = String(raw.browser === undefined || raw.browser === null ? '' : raw.browser).trim();
+  cfg.browser = ['', 'firefox', 'microsoft-edge', 'google-chrome-stable', 'chromium'].includes(br)
+    ? br
+    : (/^[A-Za-z0-9_./+-]{1,80}$/.test(br) ? br : '');
   return cfg;
 }
 
@@ -109,12 +115,26 @@ function _styleFor(state) {
   return css;
 }
 
-/** Open one URL: the per-chip deep link, or the configured page. */
+/** Open one URL. browser 空 = xdg-open(系统默认);预设映射到各家命令行
+ *  (Firefox 用 --new-tab 确保进已运行实例的新标签页);其余按自定义单 token 处理。 */
 function _chipClick(url) {
   try {
-    if (url !== '') {
-      imports.misc.util.spawn(['xdg-open', url]);
+    if (url === '') return;
+    let argv;
+    switch (_cfg.browser) {
+      case 'firefox':
+        argv = ['firefox', '--new-tab', url];
+        break;
+      case 'microsoft-edge':
+      case 'google-chrome-stable':
+      case 'chromium':
+        argv = [_cfg.browser, url];
+        break;
+      default:
+        argv = [_cfg.browser !== '' ? _cfg.browser : 'xdg-open', url];
+        break;
     }
+    imports.misc.util.spawn(argv);
   } catch (e) {
     log('[dsh-topbar] open url failed: ' + e);
   }
