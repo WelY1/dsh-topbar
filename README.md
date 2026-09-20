@@ -106,7 +106,7 @@ completedNotifications = new Set();
 | 显示：运行中/已完成/等待中 | 开关 ×3 | 全开 | 关闭的状态不上顶栏 |
 | 点击色块 | 无 / 打开网页 / 跳转到对应会话 | 无 | 见下 |
 | 跳转浏览器 | 默认(Firefox/Edge/Chrome/Chromium…) | xdg-open | `打开网页`/`跳转到对应会话` 时用哪个浏览器开 URL;Firefox 以 `--new-tab` 进已运行实例的新标签页 |
-| 网页地址 / 应用地址 | http(s) URL | 空 | `打开网页` = 点击打开此地址；`跳转到对应会话` 时此字段作为应用基址，点击打开 `<基址>?open=<会话ID>`，页面加载后自动选会话 |
+| 网页地址 / 应用地址 | http(s) URL | 空 = 自动 | **可留空**:自动使用本机 DSH 网页地址(host 从 webServer 端口推导)。远程访问 DSH 时才需要手填 |
 | 提醒保持 | -1 / 0~7200 秒 | 90 | `0` = 回答后立即跟随真实状态；`-1` = 常驻（见上表） |
 | 自动安装 GNOME 扩展 | 开关 | 开 | DSH 启动时把扩展文件幂等同步到 `~/.local/share/gnome-shell/extensions/`（无需 sudo） |
 | 自动重载 Shell | 开关 | **开** | 扩展文件变化时自动 `global.reexec_self()` 重载 Shell（仅 X11；Wayland 拒绝）——与 Alt+F2→r 等效，桌面短暂闪烁、窗口保持 |
