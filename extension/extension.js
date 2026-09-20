@@ -104,7 +104,7 @@ function _styleFor(state) {
     'border-radius:4px;' +
     'margin:0 2px;';
   css += _cfg.minimal
-    ? 'width:10px;padding:0 6px;'
+    ? 'width:12px;height:12px;padding:0;'
     : 'padding:2px 8px;';
   return css;
 }
