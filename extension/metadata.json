@@ -1,0 +1,9 @@
+{
+  "uuid": "dsh-topbar@cf206.local",
+  "name": "DSH Topbar Sessions",
+  "description": "在 GNOME 顶栏显示 DeepSeek Harness 各会话的运行状态：灰=运行中，绿=已完成，黄=等待回复。",
+  "shell-version": [
+    "3.36"
+  ],
+  "version": 2
+}
