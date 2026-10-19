@@ -1,6 +1,6 @@
 {
   "name": "dsh-topbar",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "description": "Push DSH session status to the GNOME top bar (Ubuntu/GNOME 3.36). Gray=running, green=done (unacknowledged), yellow=waiting (approval/question/plan review). Configurable from this plugin's entry on the sidebar Plugins page; auto-installs its GNOME extension half.",
   "keywords": [
     "dsh",
@@ -36,9 +36,11 @@
     "cordis.patch.yml",
     "README.md"
   ],
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.4"
+  },
   "peerDependencies": {
-    "@deepseek-ai/dsh-settings": ">=0.1.1-rc.1",
-    "@deepseek-ai/schemastery": ">=3.18.4"
+    "@deepseek-ai/dsh-settings": ">=0.1.1-rc.1"
   },
   "dsh": {
     "bundle": {

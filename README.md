@@ -7,7 +7,7 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <img alt="GNOME 3.36" src="https://img.shields.io/badge/GNOME-3.36%20%E4%B8%93%E7%94%A8-4d6bfe" /><br /><br />
   <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
-  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.4.8-4d6bfe" /></a><br /><br />
+  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.4.9-4d6bfe" /></a><br /><br />
   <img alt="灰=运行中" src="https://img.shields.io/badge/---8a8a8a" /> <img alt="绿=已完成未确认" src="https://img.shields.io/badge/---3fa34d" /> <img alt="黄=等待回复或审批" src="https://img.shields.io/badge/---e0a819" /><br /><br />
   <code>[ 活动 ][ Firefox ][ 当前ros2的流程是… ][ 重建索引 ]</code><br />
   <i>↑ 每个会话一个色块，紧挨时钟，最要事的排最左</i>
@@ -162,13 +162,24 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 
 完整历史见 [gitee tags](https://gitee.com/We1YI/dsh-topbar/tags)。
 
+### v0.4.9
+
+- 🐛 **修 v0.4.8 的依赖声明错误**：v0.4.8 把 schemastery 改成了 **peer-only**。在「只装了本插件」的干净 profile 上没有任何包提供它，导入直接失败：
+
+  ```
+  ERR_MODULE_NOT_FOUND: Cannot find package '@deepseek-ai/schemastery'
+  ```
+
+  实测对照（新建一个只含本插件的临时 profile）：无提供者 → ❌ 导入失败；配合一份嵌套的 3.18.4 → ✅ 导入成功、14 个字段全 volatile。因此改回 **`dependencies: "^3.18.4"`**。
+- 📌 **要修的是版本下限，不是依赖形态**：`^3.18.1` 装出来的 3.18.1 没有 `.volatile()`，才是 `failed to import` 的根因；下限提到 `^3.18.4` 即解决。这也是生态通行做法——本机 profile 里 20 个插件中 **17 个**把 `^3.18.4` 写成普通依赖，peer-only 只有两个第三方包。
+
 ### v0.4.8
 
 适配 DSH **0.2.0-rc.2** 的两处破坏性变更；v0.4.3 及更早在这版 DSH 上**配置页会整个消失、绿块永不出现，且没有任何报错**。
 
 - ✨ **配置页迁到侧边栏 Plugins 页**：新 DSH 删除了旧的 `settings.plugin.item` slot（连同 `settings.installSection`），旧版注册进去的是一个**已不存在**的 seam，失败还被 `try/catch` 静默吞掉。现改为注册 `plugins.bundle.config`，表单交给宿主渲染
 - 🐛 **绿灯恢复**：`SessionSummary.completed` 被删除，原先读它取「已完成未确认」恒为假。改读客户端状态服务 `uiSession.sessionStatus.completionUnread`——与侧栏绿点同一个源。相应地客户端半部必须在 `dsh.client.inject` 里声明 `uiSession`，否则服务不可达
-- 🐛 **修 `topbar (dsh-topbar): failed to import`**：`@deepseek-ai/schemastery` 原为普通依赖 `^3.18.1`，pnpm 会在包内嵌一份 3.18.1 盖住宿主的 3.18.4；而配置表单需要的 `.volatile()` 直到 3.18.4 才有，于是**模块求值期**抛 `TypeError`，整条插件不激活。改为 `peerDependencies: >=3.18.4`，共用宿主那一份
+- 🐛 **修 `topbar (dsh-topbar): failed to import`**：`@deepseek-ai/schemastery` 原为普通依赖 `^3.18.1`，pnpm 会在包内嵌一份 3.18.1 盖住宿主的 3.18.4；而配置表单需要的 `.volatile()` 直到 3.18.4 才有，于是**模块求值期**抛 `TypeError`，整条插件不激活。**版本下限**才是根因（v0.4.9 定了最终做法）
 - 📦 设置命名空间改为 profile 条目 id（`topbar`），`Config` 需导出且**全部字段声明 `.volatile()`**，否则该条目根本不会出现在 `settings.describe()` 里
 - 📖 README 同步更新配置入口、状态判定依据与 DSH 版本矩阵
 
@@ -231,7 +242,7 @@ GNOME 顶栏 _leftBox 末尾
 | 报 `gdbus: not found` | 扩展半部依赖 `/usr/bin/gdbus`，装 `glib2` 相关包或调整 `GDBUS` 路径。 |
 | 扩展没被启用 | 插件会写 `enabled-extensions`；若 dconf 不可用会跳过，手动在「tweaks」或 `gsettings` 里启用 `dsh-topbar@cf206.local`。 |
 | 点了色块没反应 | 「点击色块」是「无操作」。想要跳转需在插件配置页（插件 → 已安装 → dsh-topbar → 查看）里选「跳转到对应会话」，且「应用地址」可留空自动推导。 |
-| 升级 DSH 后配置页消失 / 绿块不出现 | 0.2.0-rc.2 的两处破坏性变更所致，升到 **v0.4.8+** 即可。若启动日志出现 `topbar (dsh-topbar): failed to import`，基本是 schemastery 版本漂移（见 [开发](#-开发)）。 |
+| 升级 DSH 后配置页消失 / 绿块不出现 | 0.2.0-rc.2 的两处破坏性变更所致，升到 **v0.4.9+** 即可（配置页与绿灯本身自 v0.4.8 起就修好了，但 v0.4.8 的依赖声明有误，见 [最近更新](#-最近更新)）。若启动日志出现 `topbar (dsh-topbar): failed to import`，基本是 schemastery 版本漂移（见 [开发](#-开发)）。 |
 
 </details>
 
@@ -311,7 +322,11 @@ cp extension/*.js ~/.local/share/gnome-shell/extensions/dsh-topbar@cf206.local/
 
 > 💡 若 profile 里把依赖写成 `file:./dsh-topbar-dev/plugin-dsh`（本地迭代推荐），一次 `pnpm install` 就会把部署副本指向本仓库；否则任何一次从插件页的装/升都会跑 pnpm、按 lockfile 把部署副本回退成旧版，**你手工同步的改动会被静默覆盖**。
 >
-> ⚠️ **不要把 `@deepseek-ai/schemastery` 写回 `dependencies`**：那会让 pnpm 在包内嵌一份固定版本，盖住宿主带 `.volatile()` 的那份，插件会在**求值期**直接 `failed to import`（整条 entry 不激活）。它必须留在 `peerDependencies`（`>=3.18.4`）。
+> ⚠️ **`@deepseek-ai/schemastery` 必须是普通依赖，且版本下限 ≥ `^3.18.4`。** 两头都会出事：
+> - 把**下限改小**（如 `^3.18.1`）：pnpm 在包内嵌的那份会盖住宿主带 `.volatile()` 的那份，模块**求值期**抛 `TypeError`，整条 entry 报 `failed to import`。
+> - 把它**挪到 `peerDependencies`**：在只装本插件的干净 profile 上无人提供它，导入报 `ERR_MODULE_NOT_FOUND`。
+>
+> 两种情况都实测过，只有 `dependencies: "^3.18.4"` 在两种环境下都能正常导入。
 
 改完代码要做什么：
 
