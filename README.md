@@ -6,8 +6,8 @@
   <a href="https://gitee.com/We1YI/dsh-topbar"><img alt="gitee" src="https://img.shields.io/badge/gitee-We1YI%2Fdsh--topbar-4d6bfe" /></a>
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <img alt="GNOME 3.36" src="https://img.shields.io/badge/GNOME-3.36%20%E4%B8%93%E7%94%A8-4d6bfe" /><br /><br />
-  <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+" src="https://img.shields.io/badge/DSH-0.1.1--rc.1%2B-4d6bfe" /></a>
-  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.4.6-4d6bfe" /></a><br /><br />
+  <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
+  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.4.8-4d6bfe" /></a><br /><br />
   <img alt="灰=运行中" src="https://img.shields.io/badge/---8a8a8a" /> <img alt="绿=已完成未确认" src="https://img.shields.io/badge/---3fa34d" /> <img alt="黄=等待回复或审批" src="https://img.shields.io/badge/---e0a819" /><br /><br />
   <code>[ 活动 ][ Firefox ][ 当前ros2的流程是… ][ 重建索引 ]</code><br />
   <i>↑ 每个会话一个色块，紧挨时钟，最要事的排最左</i>
@@ -37,7 +37,7 @@
 - **🟩 分叉对话照常显示**：DSH 的「分叉对话」与「子智能体」在 header 里都写 `parentSession`，本插件按 `origin` 正确区分（见 [子智能体与分叉对话](#-子智能体与分叉对话)）
 - **👥 子智能体活动上卷**：子智能体自己不出块（不刷屏），但它运行时会让所属会话保持灰色——父 turn 结束后依然看得见
 - **🪟 多页面并集**：同时开多个 DSH 标签页/浏览器时按「等待 > 运行 > 完成」取并集，不再互相覆盖导致闪烁或黄标丢失
-- **⚙️ 设置页可视化**：设置 → 插件中调字号、宽度、色块上限、极简模式、显示哪些状态、点击行为、提醒时长；改完 1 秒内生效
+- **⚙️ 配置界面在插件自己的页面**：侧边栏 **插件 → 已安装 → dsh-topbar → 查看**，在插件详情页上直接调字号、宽度、色块上限、极简模式、显示哪些状态、点击行为、提醒时长；改完 1 秒内生效
 - **🖱️ 点击色块直达**：可配置为打开 DSH 网页、跳转到对应会话（`?open=<id>` 深链），浏览器可选
 - **🔧 自装自愈**：DSH 启动时把 GNOME 扩展幂等同步到 `~/.local/share/gnome-shell/extensions/`（无需 sudo），X11 下文件变化自动重载 Shell
 - **🩺 自带诊断**：会话内 `topbar_status` 工具可查上报状态、推送计数、当前配置与扩展自装结果
@@ -48,17 +48,20 @@
 
 **支持的 DSH 版本**：
 
-<a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+" src="https://img.shields.io/badge/DSH-0.1.1--rc.1%2B-4d6bfe" /></a>
+<a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
 
-`engines.dsh` 声明 `>= 0.1.1-rc.1`。逐版核对过、会话列表投影与 waterfall 事件契约一致的版本：
+`engines.dsh` 声明 `>= 0.1.1-rc.1`。逐版核对过、所依赖契约一致的版本：
 
 | DSH 版本 | 状态 |
 |---|---|
 | 0.1.1-rc.1 / 0.1.1-rc.2 | compatible |
 | 0.1.2-alpha.2 / 0.1.2-alpha.5 | compatible |
-| 0.1.5-rc.1 / **0.1.5-rc.2** | compatible（本机实测版本） |
+| 0.1.5-rc.1 / 0.1.5-rc.2 | compatible |
+| **0.2.0-rc.2** | compatible（本机实测版本） |
 
-> 📌 本插件只用到 DSH 的**会话列表投影**与**两条 host 侧 waterfall**（`approval/request`、`user-questions/request`），都是稳定契约，因此跨 rc / alpha 线的适配成本很低。真正挑版本的是 **GNOME 侧**（见 [平台支持](#️-平台支持)），不是 DSH。
+> 📌 本插件只用到三处 DSH 契约：**会话列表投影**（`running` / `origin` / `parentId`）、**客户端 UI 状态服务** `uiSession.sessionStatus`（完成提醒走它的 `completionUnread`）、以及 **host 侧两条 waterfall**（`approval/request`、`user-questions/request`，只用于黄色）。
+>
+> ⚠️ **从 0.2.0-rc.2 起有两个破坏性变更**，v0.4.8 已相应迁移：`SessionSummary.completed` 被删除（绿灯改读 `sessionStatus.completionUnread`）；插件配置页的 slot 与设置命名空间被重构（见 [配置](#️-配置)）。其余真正挑版本的是 **GNOME 侧**（见 [平台支持](#️-平台支持)），不是 DSH。
 
 ### 方式一：npm（推荐）
 
@@ -94,8 +97,8 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 
 | 颜色 | 含义 | 判定依据 |
 |---|---|---|
-| 灰 `#8a8a8a` | 运行中 | session store `running === true` |
-| 绿 `#3fa34d` | 已完成、**未点开确认** | session store `completed === true` |
+| 灰 `#8a8a8a` | 运行中 | `sessionStatus.running ?? SessionSummary.running` |
+| 绿 `#3fa34d` | 已完成、**未点开确认** | `sessionStatus.completionUnread === true` |
 | 黄 `#e0a819` | 等待你回复 / 审批 | host 侧 `approval/request` + `user-questions/request` |
 | 红 | 出错 | **未实现**（见 [已知限制](#️-已知限制)） |
 
@@ -114,7 +117,13 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 
 ## ⚙️ 配置
 
-设置 → 插件 → 顶栏会话指示器。配置随每次推送一同发往 GNOME 扩展，**改动 1 秒内生效**，不需要重启 DSH 或重载 Shell。
+**侧边栏 → 插件 → 已安装 → `dsh-topbar` → 查看**，配置表单就渲染在这个插件详情页上（描述下方、「包含的组件」上方）。
+
+> 📌 **不在「设置」里。** DSH 0.2.0-rc.2 把「设置 → 插件」改成了只读清单，插件配置迁到了侧边栏的 Plugins 页。本插件 v0.4.8 起注册到 `plugins.bundle.config`，表单由宿主渲染（`configForms` 服务），**只有点「保存」才写入**。
+>
+> ⚠️ **升级注意**：设置命名空间已从 `dsh-topbar` 改为 profile 条目 id `topbar`，旧版写在 `settings.yaml` 里的 `dsh-topbar:` 一节**不会自动迁移**，需在新表单里按需重设一次（各字段默认值与原先一致）。
+
+配置随每次推送一同发往 GNOME 扩展，**改动 1 秒内生效**，不需要重启 DSH 或重载 Shell。保存后的值落在这个 profile 的 `cordis.patch.yml` 中本插件条目（`- id: topbar`）的 `config:` 下。
 
 | 配置 | 范围 | 默认 | 说明 |
 |---|---|---|---|
@@ -153,6 +162,18 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 
 完整历史见 [gitee tags](https://gitee.com/We1YI/dsh-topbar/tags)。
 
+### v0.4.8
+
+适配 DSH **0.2.0-rc.2** 的两处破坏性变更；v0.4.3 及更早在这版 DSH 上**配置页会整个消失、绿块永不出现，且没有任何报错**。
+
+- ✨ **配置页迁到侧边栏 Plugins 页**：新 DSH 删除了旧的 `settings.plugin.item` slot（连同 `settings.installSection`），旧版注册进去的是一个**已不存在**的 seam，失败还被 `try/catch` 静默吞掉。现改为注册 `plugins.bundle.config`，表单交给宿主渲染
+- 🐛 **绿灯恢复**：`SessionSummary.completed` 被删除，原先读它取「已完成未确认」恒为假。改读客户端状态服务 `uiSession.sessionStatus.completionUnread`——与侧栏绿点同一个源。相应地客户端半部必须在 `dsh.client.inject` 里声明 `uiSession`，否则服务不可达
+- 🐛 **修 `topbar (dsh-topbar): failed to import`**：`@deepseek-ai/schemastery` 原为普通依赖 `^3.18.1`，pnpm 会在包内嵌一份 3.18.1 盖住宿主的 3.18.4；而配置表单需要的 `.volatile()` 直到 3.18.4 才有，于是**模块求值期**抛 `TypeError`，整条插件不激活。改为 `peerDependencies: >=3.18.4`，共用宿主那一份
+- 📦 设置命名空间改为 profile 条目 id（`topbar`），`Config` 需导出且**全部字段声明 `.volatile()`**，否则该条目根本不会出现在 `settings.describe()` 里
+- 📖 README 同步更新配置入口、状态判定依据与 DSH 版本矩阵
+
+> ⚠️ **旧的 `settings.yaml` 里 `dsh-topbar:` 一节不会迁移**，升级后需在新表单里重设一次。
+
 ### v0.4.6
 
 - 📦 **补全 npm 元数据**：`repository` / `homepage` / `bugs` / `keywords`，包页面补上源码与问题反馈入口
@@ -173,7 +194,8 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 
 ```
 浏览器页面（client 半部）
-   │  读 session store: running / completed / origin / parentId
+   │  读 session store: running / origin / parentId
+   │  读 uiSession.sessionStatus: completionUnread（绿）
    │  心跳在 Web Worker 里，每秒 POST /dsh-topbar/state
    ↓
 DSH host 半部（dsh-topbar 插件）
@@ -187,7 +209,7 @@ GNOME Shell 扩展（持有 org.dsh.Topbar 这个 D-Bus 名）
 GNOME 顶栏 _leftBox 末尾
 ```
 
-**为什么状态必须来自页面，而不是日志**：`completed` 只活在内存的 `completedNotifications` 集合里，**从不写入会话日志**，所以任何读磁盘的方案都拿不到，只有页面能看见。
+**为什么完成状态必须来自页面，而不是日志**：`completionUnread` 是客户端 UI 状态服务里的内存事实（「跑完了、但你没点开确认」），**从不写入会话日志**，所以任何读磁盘的方案都拿不到，只有页面能看见。它与侧栏那个绿点同源；host 侧即便拿到会话列表也看不到它。
 
 **为什么黄色要由 host 侧提供**：`pendingInteraction` 是 UI slot prop，不在 `sessions.list.getSnapshot()` 里；而审批和提问在 host 侧都是 waterfall 事件，监听后叠加到页面上报的快照上。
 
@@ -208,7 +230,8 @@ GNOME 顶栏 _leftBox 末尾
 | Shell 没自动重载 | 「自动重载 GNOME Shell」只在 **X11** 生效；Wayland 会被拒绝，需手动注销重登（Wayland 下 `Alt+F2` → `r` 也无效）。 |
 | 报 `gdbus: not found` | 扩展半部依赖 `/usr/bin/gdbus`，装 `glib2` 相关包或调整 `GDBUS` 路径。 |
 | 扩展没被启用 | 插件会写 `enabled-extensions`；若 dconf 不可用会跳过，手动在「tweaks」或 `gsettings` 里启用 `dsh-topbar@cf206.local`。 |
-| 点了色块没反应 | 「点击色块」是「无操作」。想要跳转需在设置里选「跳转到对应会话」，且「应用地址」可留空自动推导。 |
+| 点了色块没反应 | 「点击色块」是「无操作」。想要跳转需在插件配置页（插件 → 已安装 → dsh-topbar → 查看）里选「跳转到对应会话」，且「应用地址」可留空自动推导。 |
+| 升级 DSH 后配置页消失 / 绿块不出现 | 0.2.0-rc.2 的两处破坏性变更所致，升到 **v0.4.8+** 即可。若启动日志出现 `topbar (dsh-topbar): failed to import`，基本是 schemastery 版本漂移（见 [开发](#-开发)）。 |
 
 </details>
 
@@ -221,8 +244,8 @@ gdbus call --session --dest org.dsh.Topbar --object-path /org/dsh/Topbar \
   --method org.dsh.Topbar.Push \
   '{"ts":1,"sessions":[{"id":"a","title":"测试","state":"waiting"}],"cfg":{"fontSize":11,"maxLabelPx":140,"maxChips":8}}'
 
-# 设置卡片背后的 bridge
-curl -s http://127.0.0.1:3080/dsh-topbar/settings
+# 确认 host 半部已挂载（405 = 路由存在，只接受 POST）
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3080/dsh-topbar/state
 
 # 扩展日志
 journalctl _COMM=gnome-shell -f | grep dsh-topbar
@@ -268,8 +291,8 @@ DSH_TOPBAR_DEBUG=1 ./dsh
 ```
 plugin-dsh/
 ├── lib/
-│   ├── index.js      host：路由 + 设置 + 审批/提问监听 + D-Bus 推送 + 扩展自装
-│   └── client.js     浏览器：session store 上报 + 子智能体上卷 + 设置卡片
+│   ├── index.js      host：状态路由 + Config schema + 审批/提问监听 + D-Bus 推送 + 扩展自装
+│   └── client.js     浏览器：session store + sessionStatus 上报 + 子智能体上卷 + 配置卡片
 ├── extension/
 │   ├── metadata.json GNOME 扩展清单（uuid / shell-version 3.36）
 │   └── extension.js  GNOME 扩展：色块渲染 + cfg 应用 + D-Bus 服务
@@ -281,10 +304,14 @@ plugin-dsh/
 
 ```sh
 cd dsh-topbar-dev
-./pack.sh                                                    # 打离线包
-cp plugin-dsh/lib/*.js ~/.dsh/profiles/web/node_modules/dsh-topbar/lib/
-cp plugin-dsh/extension/*.js ~/.local/share/gnome-shell/extensions/dsh-topbar@cf206.local/
+./pack.sh                                                                 # 打离线包
+cd plugin-dsh && PROFILE_DIR=~/.dsh/profiles/web bash install.sh plugin   # 同步 lib/ 到部署副本
+cp extension/*.js ~/.local/share/gnome-shell/extensions/dsh-topbar@cf206.local/
 ```
+
+> 💡 若 profile 里把依赖写成 `file:./dsh-topbar-dev/plugin-dsh`（本地迭代推荐），一次 `pnpm install` 就会把部署副本指向本仓库；否则任何一次从插件页的装/升都会跑 pnpm、按 lockfile 把部署副本回退成旧版，**你手工同步的改动会被静默覆盖**。
+>
+> ⚠️ **不要把 `@deepseek-ai/schemastery` 写回 `dependencies`**：那会让 pnpm 在包内嵌一份固定版本，盖住宿主带 `.volatile()` 的那份，插件会在**求值期**直接 `failed to import`（整条 entry 不激活）。它必须留在 `peerDependencies`（`>=3.18.4`）。
 
 改完代码要做什么：
 
