@@ -31,25 +31,73 @@ EXT_DIR="${HOME}/.local/share/gnome-shell/extensions/${EXT_UUID}"
 PROFILE_DIR="${PROFILE_DIR:-${HOME}/.dsh/profiles/web}"
 PLUGIN_DIR="${PROFILE_DIR}/node_modules/dsh-topbar"
 
+# Extension faces: GNOME 45 removed the legacy `imports.*` interface for
+# extensions, so 3.36-44 take extension/legacy and 45+ extension/modules.
+# Same rule as pickVariant() in lib/index.js — keep the two in step.
+GNOME_LEGACY_MAX=44
+GNOME_KNOWN_MAX=48
+
+# Parsed from `gnome-shell --version`; empty means "unknown".
+DETECTED_MAJOR=""
+DETECTED_RAW=""
+DETECTED_WARNING=""
+
+# Sets DETECTED_MAJOR / DETECTED_RAW / DETECTED_WARNING. Never fails: an
+# unknown version leaves DETECTED_MAJOR empty, which selects legacy.
+detect_gnome_major() {
+  local raw major second
+  DETECTED_MAJOR=""; DETECTED_RAW=""; DETECTED_WARNING=""
+  if ! command -v gnome-shell >/dev/null 2>&1; then
+    DETECTED_WARNING="gnome-shell not found in PATH"
+    return 0
+  fi
+  raw="$(gnome-shell --version 2>/dev/null || true)"
+  DETECTED_RAW="${raw}"
+  # "GNOME Shell 3.36.9" -> 3.36 -> 36 ; "GNOME Shell 46.2" -> 46.2 -> 46
+  if [[ "${raw}" =~ ([0-9]+)\.([0-9]+) ]]; then
+    major="${BASH_REMATCH[1]}"
+    second="${BASH_REMATCH[2]}"
+    if [ "${major}" = "3" ]; then DETECTED_MAJOR="${second}"; else DETECTED_MAJOR="${major}"; fi
+  else
+    DETECTED_WARNING="unparsable gnome-shell --version output: ${raw}"
+  fi
+}
+
+# Echoes the extension face directory name for the detected major.
+pick_variant() {
+  local major="$1"
+  if [ -z "${major}" ]; then echo "legacy"; return 0; fi
+  if [ "${major}" -le "${GNOME_LEGACY_MAX}" ] 2>/dev/null; then echo "legacy"; else echo "modules"; fi
+}
+
 prechecks() {
   if ! command -v gdbus >/dev/null 2>&1 && [ ! -x /usr/bin/gdbus ]; then
     echo "    WARNING: gdbus not found — the host plugin cannot reach the bar" >&2
   fi
-  if command -v gnome-shell >/dev/null 2>&1; then
-    local ver
-    ver="$(gnome-shell --version 2>/dev/null || true)"
-    if [ -n "${ver}" ] && [[ "${ver}" != *"3.36"* ]]; then
-      echo "    WARNING: this extension targets GNOME 3.36, found: ${ver}" >&2
-    fi
+  detect_gnome_major
+  if [ -z "${DETECTED_MAJOR}" ]; then
+    echo "    WARNING: GNOME version unknown (${DETECTED_WARNING:-${DETECTED_RAW:-no output}}); falling back to the legacy extension face (GNOME 3.36-${GNOME_LEGACY_MAX})" >&2
+  elif [ "${DETECTED_MAJOR}" -lt 36 ]; then
+    echo "    WARNING: GNOME ${DETECTED_MAJOR} is older than the oldest supported release (3.36); installing the legacy face anyway" >&2
+  elif [ "${DETECTED_MAJOR}" -gt "${GNOME_KNOWN_MAX}" ]; then
+    echo "    WARNING: GNOME ${DETECTED_MAJOR} is newer than the newest tested release (${GNOME_KNOWN_MAX}); installing the modules face" >&2
   fi
 }
 
 install_ext() {
-  echo "==> installing extension to ${EXT_DIR}"
-  [ -d "${HERE}/extension" ] || { echo "    extension/ not found next to install.sh" >&2; exit 1; }
+  # Re-detect even when prechecks did not run (plain `./install.sh ext`).
+  detect_gnome_major
+  local variant src_dir
+  variant="$(pick_variant "${DETECTED_MAJOR}")"
+  if [ -z "${DETECTED_MAJOR}" ]; then
+    echo "    WARNING: GNOME version unknown (${DETECTED_WARNING:-${DETECTED_RAW:-no output}}); falling back to the legacy extension face (GNOME 3.36-${GNOME_LEGACY_MAX})" >&2
+  fi
+  echo "==> installing extension to ${EXT_DIR} (face: ${variant}, detected: ${DETECTED_RAW:-unknown})"
+  src_dir="${HERE}/extension/${variant}"
+  [ -d "${src_dir}" ] || { echo "    ${src_dir} not found next to install.sh" >&2; exit 1; }
   mkdir -p "${EXT_DIR}"
-  cp "${HERE}/extension/metadata.json" "${EXT_DIR}/metadata.json"
-  cp "${HERE}/extension/extension.js" "${EXT_DIR}/extension.js"
+  cp "${src_dir}/metadata.json" "${EXT_DIR}/metadata.json"
+  cp "${src_dir}/extension.js" "${EXT_DIR}/extension.js"
   chmod 644 "${EXT_DIR}/metadata.json" "${EXT_DIR}/extension.js"
   # Register + enable. gsettings may warn if dconf is unavailable; harmless.
   gsettings set org.gnome.shell enabled-extensions \

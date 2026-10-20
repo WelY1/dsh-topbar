@@ -5,16 +5,16 @@
   <a href="https://www.npmjs.com/package/dsh-topbar"><img alt="npm version" src="https://img.shields.io/npm/v/dsh-topbar" /></a>
   <a href="https://gitee.com/We1YI/dsh-topbar"><img alt="gitee" src="https://img.shields.io/badge/gitee-We1YI%2Fdsh--topbar-4d6bfe" /></a>
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
-  <img alt="GNOME 3.36" src="https://img.shields.io/badge/GNOME-3.36%20%E4%B8%93%E7%94%A8-4d6bfe" /><br /><br />
+  <img alt="GNOME 3.36-48" src="https://img.shields.io/badge/GNOME-3.36%20%7C%2044%20%7C%2048-4d6bfe" /><br /><br />
   <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
-  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.4.9-4d6bfe" /></a><br /><br />
+  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.0-4d6bfe" /></a><br /><br />
   <img alt="灰=运行中" src="https://img.shields.io/badge/---8a8a8a" /> <img alt="绿=已完成未确认" src="https://img.shields.io/badge/---3fa34d" /> <img alt="黄=等待回复或审批" src="https://img.shields.io/badge/---e0a819" /><br /><br />
   <code>[ 活动 ][ Firefox ][ 当前ros2的流程是… ][ 重建索引 ]</code><br />
   <i>↑ 每个会话一个色块，紧挨时钟，最要事的排最左</i>
 </div>
 
 <div align="center">
-  ⚠️ <b>仅适用于 GNOME 3.36</b>（Ubuntu 20.04）· 详见 <a href="#️-平台支持">平台支持</a>
+  ✅ <b>GNOME 3.36 \~ 48</b>：安装扩展时自动探测 <code>gnome-shell --version</code> 并选对应变体 · 详见 <a href="#️-平台支持">平台支持</a>
 </div>
 
 ## 📑 目录
@@ -90,7 +90,7 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 1. 执行 dsh plugin --profile web add dsh-topbar
 2. 装完提醒我硬刷新浏览器（Ctrl+F5）
 3. 如果顶栏没出现色块，帮我查 topbar_status 工具的输出
-本插件只支持 GNOME 3.36；如果目标机是 GNOME 42+，直接告诉我，不用继续装。
+本插件支持 GNOME 3.36\~48，扩展会按 gnome-shell --version 自动选变体；装完如果顶栏没动静，帮我看看 topbar_status 里的 extInstall。
 ```
 
 ## 🎨 状态与颜色
@@ -161,6 +161,17 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 ## 🆕 最近更新
 
 完整历史见 [gitee tags](https://gitee.com/We1YI/dsh-topbar/tags)。
+
+### v0.5.0
+
+从「GNOME 3.36 专用」扩到 **3.36\~48**，靠按 Shell 版本自动选变体。
+
+- ✨ **扩展拆成双变体**：`extension/legacy/`（旧式 `imports.*` GJS，覆盖 3.36\~44）与 `extension/modules/`（ESM `import`，覆盖 45+）。GNOME 45 移除了扩展可用的 `imports.*` 接口，同一份文件无法两边都跑，所以拆成两份；两者渲染主体逐行相同，只差 import 头与生命周期壳（legacy 的 `init/enable/disable` ↔ ESM 的 `export default class … extends Extension`）。**每个变体目录各自是完整单文件**，部署目录内不会引用缺失的同级文件
+- ✨ **运行时自动识别**（不是 npm install 钩子）：`lib/index.js` 的 `selfInstallExtension()` 在拷贝前跑 `gnome-shell --version` 解析主版本，≤ 44 装 legacy、≥ 45 装 modules；探测失败或版本超范围时**装 legacy 并打印明确警告**（stderr + `topbar_status.extInstall.message`），不静默装错。`install.sh` 的 `install_ext()` 用同一套规则（bash 侧）
+- 📦 **metadata 按变体分开**：`legacy` 声明 `["3.36","3.38","40","42","44"]`，`modules` 声明 `["45","46","47","48"]`；变体自身声明的版本集合就是它会被加载的集合
+- 🔁 **换版自动换面**：部署的变体名记在 `state.extInstall.variant` 里，Shell 升级跨过 45 后重新挂载会重新探测并重装对应变体
+- 📖 **README 补 GNOME 兼容矩阵**（逐主版本 ↔ 变体 ↔ 实测/推断）与 **Wayland 说明**：`Alt+F2` → `r` 在 Wayland 不可用，需 `gnome-extensions enable`（45+）或注销重登（3.36+Wayland 只能注销重登）
+- 🔢 版本 0.4.9 → 0.5.0
 
 ### v0.4.9
 
@@ -237,7 +248,7 @@ GNOME 顶栏 _leftBox 末尾
 | 会话在跑但没色块 | 检查它是不是**子智能体**（子智能体默认不上自己的块）或**分叉会话**（0.4.3 及更早会被漏掉，请升级）。 |
 | 装完不生效 | client 半部要**硬刷新浏览器**（`Ctrl+F5`）；host 半部要**重启 DSH**；扩展半部要**重载 Shell**（X11：`Alt+F2` → `r`）。 |
 | 改了 `lib/index.js` 没反应 | host 半部是 DSH 进程里跑的，**必须重启 DSH**。 |
-| 改了 `extension/extension.js` 没反应 | GNOME 3.36 会缓存扩展模块，`disable`/`enable` 不会重新加载代码——**必须重载 Shell**。 |
+| 改了 `extension/*/extension.js` 没反应 | GNOME 3.36 会缓存扩展模块，`disable`/`enable` 不会重新加载代码——**必须重载 Shell**；Wayland 下只能注销重登（见 [Wayland 说明](#wayland-说明)）。 |
 | Shell 没自动重载 | 「自动重载 GNOME Shell」只在 **X11** 生效；Wayland 会被拒绝，需手动注销重登（Wayland 下 `Alt+F2` → `r` 也无效）。 |
 | 报 `gdbus: not found` | 扩展半部依赖 `/usr/bin/gdbus`，装 `glib2` 相关包或调整 `GDBUS` 路径。 |
 | 扩展没被启用 | 插件会写 `enabled-extensions`；若 dconf 不可用会跳过，手动在「tweaks」或 `gsettings` 里启用 `dsh-topbar@cf206.local`。 |
@@ -273,19 +284,56 @@ DSH_TOPBAR_DEBUG=1 ./dsh
 
 | 维度 | 支持情况 |
 |---|---|
-| **GNOME** | **仅 3.36**（Ubuntu 20.04 / Debian 11）。扩展用旧式 GJS（`imports.gi`），**GNOME 42+ 无法运行**。 |
+| **GNOME** | **3.36 \~ 48**，安装时自动探测选变体（见下表） |
 | 显示服务器 | X11 与 Wayland 都能用；仅「自动重载 Shell」限 X11。 |
-| 发行版 | 任何 GNOME 3.36 + 已装 `gdbus` 的 Linux 均可。 |
+| 发行版 | 任何 GNOME 3.36+ + 已装 `gdbus` 的 Linux 均可。 |
 | 其他桌面 | 不支持（依赖 GNOME Shell 顶栏扩展机制）。 |
 | Node.js | ≥ 20 |
 
-> 🚫 **如果你在 GNOME 42+（Ubuntu 22.04 / 24.04、Fedora 现代版、Arch 新版）上，本插件装不了。** 原因写在 `extension/metadata.json` 的 `shell-version: ["3.36"]` 里，是硬约束。
+### GNOME 版本兼容矩阵
+
+GNOME 45 移除了扩展可用的旧式 GJS 接口（`imports.*`），因此本包内置**两个变体**，安装扩展时读 `gnome-shell --version` 决定装哪个：
+
+| GNOME 主版本 | 发行版参考 | 变体 | 状态 |
+|---|---|---|---|
+| 3.36 | Ubuntu 20.04 / Debian 11 | `extension/legacy/`（`imports.*`） | ✅ **实测**（本机 3.36.9 X11） |
+| 3.38 | Ubuntu 20.10 | `legacy` | 🟡 推断支持（同一 GJS 接口，未实机验证） |
+| 40 / 41 | Ubuntu 21.04 / 21.10 | `legacy` | 🟡 推断支持（未实机验证） |
+| 42 / 43 / 44 | Ubuntu 22.04 / 22.10 / 23.04 | `legacy` | 🟡 推断支持（未实机验证） |
+| 45 / 46 | Ubuntu 23.10 / 24.04 | `extension/modules/`（ESM） | 🟡 推断支持（按 GNOME 45 ESM 语义编写，未实机验证） |
+| 47 / 48 | Fedora 41+ / Ubuntu 24.10+ | `modules` | 🟡 推断支持（未实机验证） |
+| < 3.36 或 > 48 | — | 回退 `legacy` / 取 `modules` | ⚠️ 超出声明范围，会打印警告 |
+
+- **探测发生在运行时**（`lib/index.js` 的 `selfInstallExtension()`，以及 `install.sh` 的 `install_ext()`），不是 npm 安装钩子——两边用同一套规则：主版本 ≤ 44 取 `legacy`，≥ 45 取 `modules`。
+- **探测失败或版本超出范围不会装错就完事**：回退 `legacy` 的同时向 stderr（`install.sh`）或日志与 `topbar_status`（插件侧）输出明确警告——`WARNING: GNOME version unknown ... falling back to the legacy extension face`。
+- 「实测」仅 3.36.9 一行；其余按接口兼容性推断。在 42/44/46 上跑过的用户请回报，好把 🟡 改成 ✅。
+
+### Wayland 说明
+
+Wayland 会话下本插件**功能完全可用**（色块渲染、推送、点击跳转都不受影响），只有两处「重载 Shell」的便利性差别：
+
+- **`Alt+F2` → `r` 不可用。** 那是 X11 时代的 Shell 重启入口，Wayland 下被禁用（GNOME 有意为之：无法在不销毁会话的情况下重启合成器）。
+- **插件的「自动重载 Shell」也会被拒绝**，并在 `topbar_status` 的 `extInstall.message` 里追加 `[Wayland detected: automatic reload refused]`。
+
+Wayland 下让扩展生效/更新，用下面任一方式：
+
+```sh
+# 1) 会话内即可完成：禁→启 走一遍（GNOME 45+ 下足够；3.36 会缓存模块，见下）
+gnome-extensions disable dsh-topbar@cf206.local
+gnome-extensions enable  dsh-topbar@cf206.local
+
+# 2) 最稳妥：注销后重新登录（Wayland 下唯一能真正重新加载扩展代码的方式）
+```
+
+> ⚠️ **GNOME 3.36 有个额外坑**：它会缓存扩展模块，`disable`/`enable` **不会**重新加载代码。所以在 3.36 + Wayland 上，改了扩展代码后唯一生效路径就是**注销重登**；X11 上则可以直接用插件的自动重载（`global.reexec_self()`）。
+
+> 📌 `install.sh` 和插件的自动安装都会把 uuid 写进 `org.gnome.shell` 的 `enabled-extensions`；若 dconf 不可用会被跳过，此时按上面命令手动启用。
 
 ## ⚠️ 已知限制
 
 - **关闭浏览器标签页 → 顶栏清空。** 数据源是页面。心跳跑在 Web Worker 里，切标签页、最小化窗口**不会**导致清空；只有真正关闭标签页（或被浏览器因内存压力丢弃）才会清。
 - **红色（出错）未实现。** 原计划从 `turn/end` 的 `reason.kind == "error"` 取，实测该值存在（样本：133 completed / 6 aborted / 1 error），但未在运行中验证渲染。早期尝试过 herald 的 `outcome` 字段——不可用。
-- **GNOME 3.36 专用**，见上。
+- **GNOME 45+ 变体未实机验证**（本机只有 3.36）；ESM 侧按 GNOME 45 语义自审，见 [开发](#-开发)。
 - **依赖 `gdbus` 二进制**（`/usr/bin/gdbus`）。
 - 色块数量由「最大色块数」设置封顶；每个标题按设置的宽度像素截断。
 
@@ -305,11 +353,17 @@ plugin-dsh/
 │   ├── index.js      host：状态路由 + Config schema + 审批/提问监听 + D-Bus 推送 + 扩展自装
 │   └── client.js     浏览器：session store + sessionStatus 上报 + 子智能体上卷 + 配置卡片
 ├── extension/
-│   ├── metadata.json GNOME 扩展清单（uuid / shell-version 3.36）
-│   └── extension.js  GNOME 扩展：色块渲染 + cfg 应用 + D-Bus 服务
+│   ├── legacy/       变体一：GNOME 3.36\~44（旧式 imports.* GJS）
+│   │   ├── metadata.json  shell-version: ["3.36","3.38","40","42","44"]
+│   │   └── extension.js   色块渲染 + cfg 应用 + D-Bus 服务
+│   └── modules/      变体二：GNOME 45+（ESM import）
+│       ├── metadata.json  shell-version: ["45","46","47","48"]
+│       └── extension.js   同一渲染主体，仅 import 头与 export enable/disable 不同
 ├── install.sh        双半部安装（ext|plugin|register|uninstall）
 └── package.json
 ```
+
+> 📌 **两个变体各自是完整单文件**，部署目录里只会出现被选中变体的 `metadata.json` + `extension.js`（不会有壳文件引用缺失的同级模块）。变体按 `gnome-shell --version` 的主版本选择：≤ 44 取 `legacy`，≥ 45 取 `modules`；这层规则在 `lib/index.js` 的 `pickVariant()` 与 `install.sh` 的 `pick_variant()` 里各写一份，改的时候两边一起改。
 
 本地开发部署（DSH 实际加载的是 `<profile>/node_modules/dsh-topbar/` 这份部署副本，**改源码不同步过去不生效**）：
 
@@ -317,7 +371,7 @@ plugin-dsh/
 cd dsh-topbar-dev
 ./pack.sh                                                                 # 打离线包
 cd plugin-dsh && PROFILE_DIR=~/.dsh/profiles/web bash install.sh plugin   # 同步 lib/ 到部署副本
-cp extension/*.js ~/.local/share/gnome-shell/extensions/dsh-topbar@cf206.local/
+bash install.sh ext                                                       # 探测版本并装对应变体
 ```
 
 > 💡 若 profile 里把依赖写成 `file:./dsh-topbar-dev/plugin-dsh`（本地迭代推荐），一次 `pnpm install` 就会把部署副本指向本仓库；否则任何一次从插件页的装/升都会跑 pnpm、按 lockfile 把部署副本回退成旧版，**你手工同步的改动会被静默覆盖**。
@@ -328,13 +382,40 @@ cp extension/*.js ~/.local/share/gnome-shell/extensions/dsh-topbar@cf206.local/
 >
 > 两种情况都实测过，只有 `dependencies: "^3.18.4"` 在两种环境下都能正常导入。
 
+### 改扩展变体的注意事项
+
+两个变体是**同一份渲染主体**（从 `const BUS_NAME` 到 `_onPush` 之前的全部逻辑逐行相同），改渲染/推送/stale 逻辑时**必须两边一起改**。核对方法：
+
+```sh
+# 除 import 头、Util.spawn、export 壳外应无差异
+diff <(sed -n '/^const BUS_NAME/,$p' extension/legacy/extension.js | sed '/^function init() {/,$d') \
+     <(sed -n '/^const BUS_NAME/,$p' extension/modules/extension.js | sed '/^\/\*\* Enable\/disable live/,$d')
+```
+
+**ESM 侧无法在本机实跑**（本机 GJS 1.64 / GNOME 3.36 不认识 `gi://` 与 `resource:///org/gnome/shell/…`），因此只做语法校验 + 语义自审：
+
+```sh
+node --check extension/legacy/extension.js    # 语法层
+node --check extension/modules/extension.js   # 语法层（不真正 import GJS 资源）
+```
+
+ESM 变体自审确认过的点：
+
+1. 导入路径用 GNOME 45 规范写法：`gi://St` 等 GI 模块默认导入、`resource:///org/gnome/shell/ui/main.js` 命名空间导入、`resource:///org/gnome/shell/extensions/extension.js` 只取 `Extension` 具名导出。
+2. 生命周期是 `export default class … extends Extension` + 实例方法 `enable()` / `disable()`，没有遗留 `init()`（45+ 已弃用），也没有顶层 `enable`/`disable` 具名导出。
+3. 无任何残留 `imports.*` 引用（`grep -n 'imports\.'` 仅命中注释里对历史的说明）。
+4. `imports.misc.util.spawn(argv)`（legacy 的 `_chipClick`）改为 `Util.spawn(argv)` 并显式导入 `resource:///org/gnome/shell/misc/util.js`。
+5. 面板挂载改用 45+ 支持的 `Main.panel.addToStatusArea(uuid, box, 0, 'left')`，不再直接操作私有的 `Main.panel._leftBox`（该私有字段在 45+ 已不存在）。
+6. 模块级可变状态（`_box` / `_chips` / `_exported` / `_ownerId` / `_staleTimer` / `_lastPushAt` / `_cfg`）与 legacy 一致，`enable()` 重建、`disable()` 清空，重复启停不泄漏。
+7. D-Bus 契约一字未动：bus 名 `org.dsh.Topbar`、对象路径 `/org/dsh/Topbar`、`Push(s) → s` 签名与 payload 结构（`{ts, sessions, cfg}`）与 legacy 完全相同。
+
 改完代码要做什么：
 
 | 改了哪里 | 需要 |
 |---|---|
 | `lib/client.js`（浏览器半部） | 浏览器**硬刷新** `Ctrl+F5` |
 | `lib/index.js`（host 半部） | **重启 DSH** |
-| `extension/extension.js` | 同步 + **重载 Shell**（`Alt+F2` → `r`） |
+| `extension/legacy/extension.js` 或 `extension/modules/extension.js` | 同步 + **重载 Shell**（X11：`Alt+F2` → `r`；Wayland：注销重登）。两份渲染主体需保持一致 |
 
 源码内常量（只有改这些才需要重启/刷新）：
 
@@ -343,7 +424,7 @@ cp extension/*.js ~/.local/share/gnome-shell/extensions/dsh-topbar@cf206.local/
 | `lib/index.js` | `CLIENT_STALE_MS` | 15000 | 页面多久没上报就清空顶栏 |
 | `lib/index.js` | `HEARTBEAT_MS` | 3500 | 内容未变时的最小推送间隔（必须小于扩展端 `STALE_MS`，否则色块会闪断） |
 | `lib/client.js` | `PUSH_MS` | 1000 | 上报间隔（心跳在 Web Worker 里跑） |
-| `extension/extension.js` | `STALE_MS` | 5000 | 无推送多久后清空 |
+| `extension/legacy/extension.js` / `extension/modules/extension.js` | `STALE_MS` | 5000 | 无推送多久后清空（两个变体一致） |
 
 ## 📄 许可证
 

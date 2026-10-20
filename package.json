@@ -1,6 +1,6 @@
 {
   "name": "dsh-topbar",
-  "version": "0.4.9",
+  "version": "0.5.0",
   "description": "Push DSH session status to the GNOME top bar (Ubuntu/GNOME 3.36). Gray=running, green=done (unacknowledged), yellow=waiting (approval/question/plan review). Configurable from this plugin's entry on the sidebar Plugins page; auto-installs its GNOME extension half.",
   "keywords": [
     "dsh",

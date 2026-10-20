@@ -1,25 +1,24 @@
-// DSH Topbar Sessions — GNOME Shell 3.36 extension (legacy GJS).
+// DSH Topbar Sessions — modules variant: GNOME Shell 45+ (ESM extension).
 //
-// Architecture: this extension OWNS the well-known D-Bus name
-// `org.dsh.Topbar` and exports a `Push` method. The DSH host plugin calls
-// Push(JSON) with the full session snapshot PLUS a `cfg` block carrying the
-// user's DSH-side settings (font size, chip width, cap, minimal mode, click
-// action). The extension only renders + expires; all state logic lives
-// plugin-side.
+// Same rendering body as ../legacy/extension.js; only the import header and
+// the exported lifecycle differ — GNOME 45 dropped `imports.*` from
+// extensions, made extensions ES modules, and replaced init()/enable()/
+// disable() with an Extension subclass (default-exported, instantiated by
+// the Shell with a metadata object). Both variants are standalone files: the
+// deployed directory holds exactly one of them plus metadata.json.
 //
-// Stale handling: because the user runs `dsh web` in a terminal, the data
-// source can vanish without notice. Every push refreshes a clock; if no push
-// arrives within STALE_MS we clear the chips so no zombie indicators remain.
-//
-// Config changes ride the same channel: a changed `cfg` alters the payload
-// content, so the push arrives immediately, and every chip is rebuilt with
-// the new geometry — no Shell reload needed for setting tweaks.
+// Architecture, stale handling and config-over-push behaviour are identical
+// to the legacy variant (see its comments): the extension owns
+// `org.dsh.Topbar` and exports `Push(JSON)`; the host sends the snapshot
+// plus a `cfg` block; no push for STALE_MS clears the chips.
 
-const St = imports.gi.St;
-const Main = imports.ui.main;
-const Gio = imports.gi.Gio;
-const Clutter = imports.gi.Clutter;
-const GLib = imports.gi.GLib;
+import St from 'gi://St';
+import Clutter from 'gi://Clutter';
+import Gio from 'gi://Gio';
+import GLib from 'gi://GLib';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
 const BUS_NAME = 'org.dsh.Topbar';
 const OBJ_PATH = '/org/dsh/Topbar';
@@ -135,7 +134,7 @@ function _chipClick(url) {
         break;
     }
     log('[dsh-topbar] click: browser="' + _cfg.browser + '" argv=' + argv.join(' '));
-    imports.misc.util.spawn(argv);
+    Util.spawn(argv);
   } catch (e) {
     log('[dsh-topbar] open url failed: ' + e);
   }
@@ -307,55 +306,55 @@ function _startStaleWatch() {
   });
 }
 
-function init() {
-  // Nothing to do; panel is built in enable().
-}
 
-function enable() {
-  _box = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
-  // Append at the END of the left box: right of Activities + app menu,
-  // left of the clock. Matches the user's reference screenshot.
-  Main.panel._leftBox.add_child(_box);
+/** Enable/disable live on the instance so a re-enable starts from clean state. */
+export default class DshTopbarExtension extends Extension {
+  enable() {
+    _box = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
+    // Append at the END of the left box: right of Activities + app menu,
+    // left of the clock. Matches the user's reference screenshot.
+    Main.panel.addToStatusArea(this.uuid, _box, 0, 'left');
 
-  // Export the service and own the name so the plugin can call us.
-  try {
-    const impl = { Push: _onPush };
-    _exported = Gio.DBusExportedObject.wrapJSObject(IFACE, impl);
-    _exported.export(Gio.DBus.session, OBJ_PATH);
-    _ownerId = Gio.bus_own_name(
-      Gio.BusType.SESSION,
-      BUS_NAME,
-      Gio.BusNameOwnerFlags.NONE,
-      null, null, null
-    );
-  } catch (e) {
-    log('[dsh-topbar] D-Bus export failed: ' + e);
+    // Export the service and own the name so the plugin can call us.
+    try {
+      const impl = { Push: _onPush };
+      _exported = Gio.DBusExportedObject.wrapJSObject(IFACE, impl);
+      _exported.export(Gio.DBus.session, OBJ_PATH);
+      _ownerId = Gio.bus_own_name(
+        Gio.BusType.SESSION,
+        BUS_NAME,
+        Gio.BusNameOwnerFlags.NONE,
+        null, null, null
+      );
+    } catch (e) {
+      log('[dsh-topbar] D-Bus export failed: ' + e);
+    }
+
+    _startStaleWatch();
+    log('[dsh-topbar] enabled on ' + BUS_NAME);
   }
 
-  _startStaleWatch();
-  log('[dsh-topbar] enabled on ' + BUS_NAME);
-}
-
-function disable() {
-  if (_staleTimer !== null) {
-    GLib.source_remove(_staleTimer);
-    _staleTimer = null;
+  disable() {
+    if (_staleTimer !== null) {
+      GLib.source_remove(_staleTimer);
+      _staleTimer = null;
+    }
+    _clearAll();
+    if (_box !== null) {
+      if (_box.get_parent() !== null) _box.get_parent().remove_child(_box);
+      _box.destroy();
+      _box = null;
+    }
+    try {
+      if (_exported !== null) _exported.unexport();
+    } catch (e) { /* already gone */ }
+    _exported = null;
+    try {
+      if (_ownerId !== null) Gio.bus_unown_name(_ownerId);
+    } catch (e) { /* already gone */ }
+    _ownerId = null;
+    _chips = new Map();
+    _lastPushAt = 0;
+    log('[dsh-topbar] disabled');
   }
-  _clearAll();
-  if (_box !== null) {
-    if (_box.get_parent() !== null) _box.get_parent().remove_child(_box);
-    _box.destroy();
-    _box = null;
-  }
-  try {
-    if (_exported !== null) _exported.unexport();
-  } catch (e) { /* already gone */ }
-  _exported = null;
-  try {
-    if (_ownerId !== null) Gio.bus_unown_name(_ownerId);
-  } catch (e) { /* already gone */ }
-  _ownerId = null;
-  _chips = new Map();
-  _lastPushAt = 0;
-  log('[dsh-topbar] disabled');
 }
