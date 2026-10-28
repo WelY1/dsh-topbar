@@ -7,7 +7,7 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <img alt="GNOME 3.36-48" src="https://img.shields.io/badge/GNOME-3.36%20%7C%2044%20%7C%2048-4d6bfe" /><br /><br />
   <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
-  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.1-4d6bfe" /></a><br /><br />
+  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.2-4d6bfe" /></a><br /><br />
   <img alt="灰=运行中" src="https://img.shields.io/badge/---8a8a8a" /> <img alt="绿=已完成未确认" src="https://img.shields.io/badge/---3fa34d" /> <img alt="黄=等待回复或审批" src="https://img.shields.io/badge/---e0a819" /><br /><br />
   <img alt="顶栏截图：灰/绿/黄三态色块" src="https://gitee.com/We1YI/dsh-topbar/raw/main/docs/topbar@2x.png" width="520" /><br /><br />
   <i>↑ 真实顶栏截图：每个会话一个色块，紧挨时钟区域——灰=运行中，绿=已完成未确认，黄=等待回复/审批</i>
