@@ -7,10 +7,10 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <img alt="GNOME 3.36-48" src="https://img.shields.io/badge/GNOME-3.36%20%7C%2044%20%7C%2048-4d6bfe" /><br /><br />
   <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
-  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.0-4d6bfe" /></a><br /><br />
+  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.1-4d6bfe" /></a><br /><br />
   <img alt="灰=运行中" src="https://img.shields.io/badge/---8a8a8a" /> <img alt="绿=已完成未确认" src="https://img.shields.io/badge/---3fa34d" /> <img alt="黄=等待回复或审批" src="https://img.shields.io/badge/---e0a819" /><br /><br />
-  <code>[ 活动 ][ Firefox ][ 当前ros2的流程是… ][ 重建索引 ]</code><br />
-  <i>↑ 每个会话一个色块，紧挨时钟，最要事的排最左</i>
+  <img alt="顶栏截图：灰/绿/黄三态色块" src="https://gitee.com/We1YI/dsh-topbar/raw/main/docs/topbar@2x.png" width="520" /><br /><br />
+  <i>↑ 真实顶栏截图：每个会话一个色块，紧挨时钟区域——灰=运行中，绿=已完成未确认，黄=等待回复/审批</i>
 </div>
 
 <div align="center">
@@ -102,6 +102,11 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 | 黄 `#e0a819` | 等待你回复 / 审批 | host 侧 `approval/request` + `user-questions/request` |
 | 红 | 出错 | **未实现**（见 [已知限制](#️-已知限制)） |
 
+<p align="center">
+  <img alt="三态色块真实截图" src="https://gitee.com/We1YI/dsh-topbar/raw/main/docs/topbar@2x.png" width="520" /><br />
+  <i>左起：灰=运行中 ×2 · 绿=已完成未确认 · 黄=等待回复（示例快照，用 <a href="#手动排查命令">排障命令</a> 推入后截取）</i>
+</p>
+
 **绿 ≠ 空闲。** 绿块是侧栏那个「跑完但你没点开看」的绿点：点开会话、或它再次开始运行，绿块自动消失——插件不自己维护「已读」。
 
 **黄块活到你看见为止。** 审批 / 提问的 waterfall 在你回答的瞬间就 resolve 了（通常几秒）。如果那时就清黄，任何起身离开过的人回来都看不到，提醒就失去意义。所以黄色**不在 settle 时清除**，而是按 dwell 计时（见 [配置](#️-配置)）。
@@ -162,6 +167,11 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 
 完整历史见 [gitee tags](https://gitee.com/We1YI/dsh-topbar/tags)。
 
+### v0.5.1
+
+- 🐛 **修「每次启动 DSH 都重载一次 Shell、屏幕闪一下」**：v0.5.0 把「部署的是哪个变体面」记在**内存态** `state.extInstall.variant` 里，`dsh web` 每次冷启动它都清零，「与探测结果不等」恒成立，于是把一字未变的已装文件判成「有变化」重新部署；`autoReloadShell` 默认开，X11 下就每次启动 `global.reexec_self()` 重载 Shell。修复：面备忘**落盘**到部署目录（`.dsh-topbar-face` marker），字节级内容比对改为常开——**仅换面或文件真变才重部署/重载**，一致即静默返回。五场景回归（一致重跑/源变/换面/冷启动）见 `build-tmp/sim.mjs`
+- 🔢 版本 0.5.0 → 0.5.1
+
 ### v0.5.0
 
 从「GNOME 3.36 专用」扩到 **3.36\~48**，靠按 Shell 版本自动选变体。
@@ -169,7 +179,7 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 - ✨ **扩展拆成双变体**：`extension/legacy/`（旧式 `imports.*` GJS，覆盖 3.36\~44）与 `extension/modules/`（ESM `import`，覆盖 45+）。GNOME 45 移除了扩展可用的 `imports.*` 接口，同一份文件无法两边都跑，所以拆成两份；两者渲染主体逐行相同，只差 import 头与生命周期壳（legacy 的 `init/enable/disable` ↔ ESM 的 `export default class … extends Extension`）。**每个变体目录各自是完整单文件**，部署目录内不会引用缺失的同级文件
 - ✨ **运行时自动识别**（不是 npm install 钩子）：`lib/index.js` 的 `selfInstallExtension()` 在拷贝前跑 `gnome-shell --version` 解析主版本，≤ 44 装 legacy、≥ 45 装 modules；探测失败或版本超范围时**装 legacy 并打印明确警告**（stderr + `topbar_status.extInstall.message`），不静默装错。`install.sh` 的 `install_ext()` 用同一套规则（bash 侧）
 - 📦 **metadata 按变体分开**：`legacy` 声明 `["3.36","3.38","40","42","44"]`，`modules` 声明 `["45","46","47","48"]`；变体自身声明的版本集合就是它会被加载的集合
-- 🔁 **换版自动换面**：部署的变体名记在 `state.extInstall.variant` 里，Shell 升级跨过 45 后重新挂载会重新探测并重装对应变体
+- 🔁 **换版自动换面**：部署的变体面备忘会跨进程保留，Shell 升级跨过 45 后重新挂载会重新探测并重装对应变体（v0.5.1 起备忘落在部署目录的 `.dsh-topbar-face`，修复了冷启动误判导致的重复重载）
 - 📖 **README 补 GNOME 兼容矩阵**（逐主版本 ↔ 变体 ↔ 实测/推断）与 **Wayland 说明**：`Alt+F2` → `r` 在 Wayland 不可用，需 `gnome-extensions enable`（45+）或注销重登（3.36+Wayland 只能注销重登）
 - 🔢 版本 0.4.9 → 0.5.0
 
@@ -360,6 +370,7 @@ plugin-dsh/
 │       ├── metadata.json  shell-version: ["45","46","47","48"]
 │       └── extension.js   同一渲染主体，仅 import 头与 export enable/disable 不同
 ├── install.sh        双半部安装（ext|plugin|register|uninstall）
+├── docs/             README 截图（顶栏三态色块）
 └── package.json
 ```
 
