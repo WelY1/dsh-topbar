@@ -7,7 +7,7 @@
   <a href="https://opensource.org/licenses/MIT"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg" /></a>
   <img alt="GNOME 3.36-48" src="https://img.shields.io/badge/GNOME-3.36%20%7C%2044%20%7C%2048-4d6bfe" /><br /><br />
   <a href="https://www.npmjs.com/package/@deepseek-ai/dsh?activeTab=versions"><img alt="支持的 DSH 版本：0.1.1-rc.1+，含 0.2.0-rc.2" src="https://img.shields.io/badge/DSH-0.2.0--rc.2-4d6bfe" /></a>
-  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.2-4d6bfe" /></a><br /><br />
+  <a href="https://gitee.com/We1YI/dsh-topbar/tags"><img alt="最新版本" src="https://img.shields.io/badge/%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC-v0.5.3-4d6bfe" /></a><br /><br />
   <img alt="灰=运行中" src="https://img.shields.io/badge/---8a8a8a" /> <img alt="绿=已完成未确认" src="https://img.shields.io/badge/---3fa34d" /> <img alt="黄=等待回复或审批" src="https://img.shields.io/badge/---e0a819" /><br /><br />
   <img alt="顶栏截图：灰/绿/黄三态色块" src="https://gitee.com/We1YI/dsh-topbar/raw/main/docs/topbar@2x.png" width="520" /><br /><br />
   <i>↑ 真实顶栏截图：每个会话一个色块，紧挨时钟区域——灰=运行中，绿=已完成未确认，黄=等待回复/审批</i>
@@ -69,7 +69,7 @@
 dsh plugin --profile web add dsh-topbar
 ```
 
-装完**硬刷新浏览器**（`Ctrl+F5`）。GNOME 扩展半部由插件自动安装，X11 下会自动重载一次 Shell（桌面短暂闪烁，窗口保持）。
+装完**硬刷新浏览器**（`Ctrl+F5`）。GNOME 扩展半部由插件自动安装**并在运行中的 Shell 里直接启用**——不需要重载 Shell，也不需要注销；只有 Shell 连续拒绝两条启用 API 时才会退回重载兜底（仅 X11，桌面短暂闪烁，窗口保持）。
 
 ### 方式二：离线 tar.gz（无 npm 网络时）
 
@@ -142,8 +142,8 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 | 跳转浏览器 | 默认 / Firefox / Edge / Chrome / Chromium / 自定义 | xdg-open | Firefox 以 `--new-tab` 进已运行实例的新标签页 |
 | 网页地址 / 应用地址 | http(s) URL | 空 = 自动 | **可留空**：自动用本机 DSH 网页地址（host 从 webServer 端口推导） |
 | 提醒保持 | -1 / 0\~7200 秒 | 90 | `0` = 回答后立即跟随真实状态；`-1` = 常驻 |
-| 自动安装 GNOME 扩展 | 开关 | 开 | 幂等同步到 `~/.local/share/gnome-shell/extensions/` |
-| 自动重载 Shell | 开关 | 开 | 扩展文件变化时自动 `global.reexec_self()`（仅 X11） |
+| 自动安装 GNOME 扩展 | 开关 | 开 | 幂等同步到 `~/.local/share/gnome-shell/extensions/`，**并确认扩展已在 Shell 中启用**（装完没启用会自愈） |
+| 自动重载 Shell | 开关 | 开 | 仅当「本次部署了扩展文件 + 自动启用失败」时兜底 `global.reexec_self()`（仅 X11；正常情况下不会重载） |
 
 ## 🧩 子智能体与分叉对话
 
@@ -166,6 +166,11 @@ PROFILE_DIR=~/.dsh/profiles/<名字> ./install.sh register
 ## 🆕 最近更新
 
 完整历史见 [gitee tags](https://gitee.com/We1YI/dsh-topbar/tags)。
+
+### v0.5.3
+
+- 🐛 **修「装完插件、扩展也被部署了，但顶栏永远不出色块」**：v0.5.2 及更早在复制扩展文件后 fire-and-forget 写 `enabled-extensions`，紧接着就 `global.reexec_self()`——dconf 写入还没落盘，新 Shell 扫不到 uuid，扩展停在 `INITIALIZED`；更糟的是「文件没变就 return」把启用检查一起跳过，所以重装、关开插件、重启 DSH 都救不回来，只有手动 `gnome-extensions enable` 或重新登录才行。修复：写入改成 `await`，随后通过 `org.gnome.Shell.Extensions.EnableExtension`（失败再退回 `Main.extensionManager._callExtensionEnable`）在**运行中的 Shell** 里直接启用并校验 `state === 1`；**文件没变也会检查并补启用**；重载 Shell 降级为「本次真的部署过文件且启用失败」时的 X11 兜底，正常路径不再让屏幕闪一下。实测 GNOME 3.36.9 X11：外部 `DisableExtension` 造出 state=2 后再跑一次插件启动，扩展回到 ENABLED
+- 🔢 版本 0.5.2 → 0.5.3
 
 ### v0.5.1
 
@@ -256,12 +261,12 @@ GNOME 顶栏 _leftBox 末尾
 |---|---|
 | 顶栏完全没有色块 | ① 最常见：**没有打开 DSH 网页**，或标签页被关闭——数据源是页面，关掉就清空。② 跑 `topbar_status` 看 `clientLive` 与 `clientDiag`。 |
 | 会话在跑但没色块 | 检查它是不是**子智能体**（子智能体默认不上自己的块）或**分叉会话**（0.4.3 及更早会被漏掉，请升级）。 |
-| 装完不生效 | client 半部要**硬刷新浏览器**（`Ctrl+F5`）；host 半部要**重启 DSH**；扩展半部要**重载 Shell**（X11：`Alt+F2` → `r`）。 |
+| 装完不生效 | client 半部要**硬刷新浏览器**（`Ctrl+F5`）；host 半部要**重启 DSH**；扩展半部 v0.5.3 起会**自动在运行中的 Shell 里启用**，无需重载。仍不生效就看 `topbar_status` 的 `extInstall.message`，或手动 `gnome-extensions enable dsh-topbar@cf206.local`。 |
 | 改了 `lib/index.js` 没反应 | host 半部是 DSH 进程里跑的，**必须重启 DSH**。 |
 | 改了 `extension/*/extension.js` 没反应 | GNOME 3.36 会缓存扩展模块，`disable`/`enable` 不会重新加载代码——**必须重载 Shell**；Wayland 下只能注销重登（见 [Wayland 说明](#wayland-说明)）。 |
 | Shell 没自动重载 | 「自动重载 GNOME Shell」只在 **X11** 生效；Wayland 会被拒绝，需手动注销重登（Wayland 下 `Alt+F2` → `r` 也无效）。 |
 | 报 `gdbus: not found` | 扩展半部依赖 `/usr/bin/gdbus`，装 `glib2` 相关包或调整 `GDBUS` 路径。 |
-| 扩展没被启用 | 插件会写 `enabled-extensions`；若 dconf 不可用会跳过，手动在「tweaks」或 `gsettings` 里启用 `dsh-topbar@cf206.local`。 |
+| 扩展没被启用 | v0.5.3 起插件会写 `enabled-extensions` **并调用 Shell 的启用 API 校验 `state=1`**；`extInstall.message` 报 `NOT enabled` 时按提示手动 `gnome-extensions enable dsh-topbar@cf206.local`（dconf 不可用时插件会跳过写入并提示）。 |
 | 点了色块没反应 | 「点击色块」是「无操作」。想要跳转需在插件配置页（插件 → 已安装 → dsh-topbar → 查看）里选「跳转到对应会话」，且「应用地址」可留空自动推导。 |
 | 升级 DSH 后配置页消失 / 绿块不出现 | 0.2.0-rc.2 的两处破坏性变更所致，升到 **v0.4.9+** 即可（配置页与绿灯本身自 v0.4.8 起就修好了，但 v0.4.8 的依赖声明有误，见 [最近更新](#-最近更新)）。若启动日志出现 `topbar (dsh-topbar): failed to import`，基本是 schemastery 版本漂移（见 [开发](#-开发)）。 |
 
